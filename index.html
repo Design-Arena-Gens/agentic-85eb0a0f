@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Windows Light</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg-gradient: linear-gradient(135deg, #f5f8ff 0%, #e8f1ff 50%, #fefefe 100%);
+      --primary: #3b82f6;
+      --primary-soft: rgba(59, 130, 246, 0.12);
+      --text: #1f2933;
+      --glass: rgba(255, 255, 255, 0.72);
+      --glass-strong: rgba(255, 255, 255, 0.88);
+      --shadow: rgba(15, 23, 42, 0.18);
+      --shadow-soft: rgba(59, 130, 246, 0.15);
+      --border: rgba(148, 163, 184, 0.35);
+      --success: #10b981;
+      --warn: #f59e0b;
+      font-family: "Segoe UI", "Inter", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+    }
+
+    textarea,
+    input {
+      user-select: text;
+    }
+
+    html,
+    body {
+      margin: 0;
+      height: 100%;
+      background: var(--bg-gradient);
+      color: var(--text);
+      overflow: hidden;
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #boot-screen {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at top, rgba(59, 130, 246, 0.2), transparent 60%),
+        var(--bg-gradient);
+      gap: 48px;
+      z-index: 1000;
+    }
+
+    .boot-logo {
+      width: 180px;
+      height: 180px;
+      position: relative;
+    }
+
+    .boot-logo svg {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 12px 24px rgba(59, 130, 246, 0.35));
+    }
+
+    .boot-progress {
+      width: 200px;
+      height: 6px;
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 999px;
+      overflow: hidden;
+      box-shadow: 0 4px 18px rgba(59, 130, 246, 0.18);
+    }
+
+    .boot-progress span {
+      display: block;
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, #60a5fa, #2563eb, #60a5fa);
+      background-size: 200% auto;
+      border-radius: inherit;
+      animation: shimmer 1.4s linear infinite;
+    }
+
+    .boot-text {
+      font-size: 1.1rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(30, 64, 175, 0.8);
+    }
+
+    @keyframes shimmer {
+      0% {
+        background-position: 0 0;
+      }
+      100% {
+        background-position: 200% 0;
+      }
+    }
+
+    #desktop {
+      position: absolute;
+      inset: 0;
+      display: none;
+      background: var(--bg-gradient);
+      overflow: hidden;
+    }
+
+    .ambient-glow {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.6;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(59, 130, 246, 0.21), transparent 45%),
+        radial-gradient(circle at 80% 30%, rgba(14, 165, 233, 0.16), transparent 50%),
+        radial-gradient(circle at 40% 80%, rgba(16, 185, 129, 0.12), transparent 50%);
+      transition: transform 0.6s ease;
+    }
+
+    .desktop-icons {
+      position: absolute;
+      inset: 60px auto auto 60px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(120px, 1fr));
+      gap: 26px 32px;
+    }
+
+    .desktop-icon {
+      width: 110px;
+      padding: 14px 12px;
+      border-radius: 16px;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 20px 35px rgba(15, 23, 42, 0.08);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+      cursor: pointer;
+    }
+
+    .desktop-icon:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 24px 45px rgba(59, 130, 246, 0.18);
+      background: rgba(255, 255, 255, 0.6);
+    }
+
+    .desktop-icon svg {
+      width: 44px;
+      height: 44px;
+      margin-bottom: 12px;
+      fill: var(--primary);
+    }
+
+    .desktop-icon span {
+      font-size: 0.86rem;
+      color: rgba(30, 64, 175, 0.88);
+      font-weight: 600;
+    }
+
+    .taskbar {
+      position: absolute;
+      left: 40px;
+      right: 40px;
+      bottom: 32px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      padding: 10px 18px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.76);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 18px 35px rgba(15, 23, 42, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      gap: 16px;
+    }
+
+    .start-button {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: var(--primary);
+      display: grid;
+      place-items: center;
+      color: white;
+      font-weight: 700;
+      font-size: 1.05rem;
+      cursor: pointer;
+      transition: transform 0.18s ease;
+      box-shadow: 0 12px 20px rgba(59, 130, 246, 0.35);
+    }
+
+    .start-button:active {
+      transform: scale(0.92);
+    }
+
+    .taskbar-search {
+      flex: 1;
+      height: 42px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 16px;
+      border-radius: 14px;
+      background: rgba(148, 163, 184, 0.12);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      color: rgba(30, 64, 175, 0.7);
+      font-size: 0.92rem;
+    }
+
+    .taskbar-clock {
+      width: 120px;
+      text-align: right;
+      font-weight: 600;
+      color: rgba(15, 23, 42, 0.7);
+    }
+
+    .start-menu {
+      position: absolute;
+      left: 52px;
+      bottom: 110px;
+      width: 320px;
+      padding: 20px;
+      border-radius: 24px;
+      background: rgba(255, 255, 255, 0.86);
+      backdrop-filter: blur(22px);
+      box-shadow: 0 30px 50px rgba(15, 23, 42, 0.18);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+      z-index: 120;
+    }
+
+    .start-menu.active {
+      display: flex;
+    }
+
+    .start-header {
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: rgba(30, 64, 175, 0.9);
+    }
+
+    .start-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .start-app {
+      padding: 12px;
+      border-radius: 16px;
+      background: rgba(59, 130, 246, 0.08);
+      border: 1px solid rgba(59, 130, 246, 0.15);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .start-app:hover {
+      transform: translateY(-4px);
+      background: rgba(59, 130, 246, 0.14);
+    }
+
+    .start-app svg {
+      width: 30px;
+      height: 30px;
+      fill: var(--primary);
+    }
+
+    .start-app span {
+      font-weight: 600;
+      font-size: 0.94rem;
+      color: rgba(15, 23, 42, 0.76);
+    }
+
+    .window {
+      position: absolute;
+      width: 360px;
+      min-height: 230px;
+      background: var(--glass-strong);
+      border-radius: 22px;
+      backdrop-filter: blur(24px);
+      box-shadow: 0 25px 60px rgba(15, 23, 42, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.85);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: pop-in 0.3s ease;
+    }
+
+    .window.focused {
+      box-shadow: 0 25px 70px rgba(37, 99, 235, 0.28);
+      border-color: rgba(59, 130, 246, 0.45);
+    }
+
+    @keyframes pop-in {
+      from {
+        transform: scale(0.94) translateY(10px);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .window-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: rgba(148, 163, 184, 0.12);
+      border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+      cursor: grab;
+    }
+
+    .window-header h2 {
+      font-size: 0.95rem;
+      margin: 0;
+      font-weight: 600;
+      color: rgba(15, 23, 42, 0.78);
+    }
+
+    .window-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .window-controls button {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+    }
+
+    .btn-min { background: var(--warn); }
+    .btn-close { background: #ef4444; }
+
+    .window-body {
+      flex: 1;
+      padding: 16px;
+      color: rgba(15, 23, 42, 0.8);
+      overflow: hidden;
+    }
+
+    .window-body.scrollable {
+      overflow: auto;
+    }
+
+    .notes-body textarea {
+      width: 100%;
+      height: 100%;
+      border: none;
+      outline: none;
+      resize: none;
+      background: rgba(148, 163, 184, 0.12);
+      padding: 14px;
+      border-radius: 16px;
+      color: inherit;
+      font-family: "Segoe UI", sans-serif;
+      font-size: 0.92rem;
+    }
+
+    .terminal {
+      background: #0f172a;
+      border-radius: 18px;
+      padding: 16px;
+      font-family: "Fira Code", monospace;
+      color: #e0f2fe;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .terminal-output {
+      flex: 1;
+      overflow: hidden;
+      color: #38bdf8;
+      font-size: 0.86rem;
+    }
+
+    .terminal-input {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #7dd3fc;
+      font-size: 0.86rem;
+    }
+
+    .terminal-input input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: inherit;
+      font: inherit;
+    }
+
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .gallery img {
+      width: 100%;
+      border-radius: 16px;
+      box-shadow: 0 16px 30px rgba(15, 23, 42, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+    }
+
+    .widget {
+      background: rgba(255, 255, 255, 0.42);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 18px 45px rgba(15, 23, 42, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      display: grid;
+      gap: 12px;
+    }
+
+    .widget h3 {
+      margin: 0;
+      letter-spacing: 0.08em;
+      color: rgba(59, 130, 246, 0.9);
+    }
+
+    .widget p {
+      margin: 0;
+      color: rgba(15, 23, 42, 0.7);
+      font-size: 0.9rem;
+    }
+
+    .notification {
+      position: absolute;
+      top: 40px;
+      right: 40px;
+      padding: 16px 20px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      box-shadow: 0 20px 38px rgba(15, 23, 42, 0.16);
+      opacity: 0;
+      transform: translateY(-10px);
+      transition: opacity 0.35s ease, transform 0.35s ease;
+      z-index: 140;
+    }
+
+    .notification.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+  <div id="boot-screen">
+    <div class="boot-logo">
+      <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+        <g>
+          <rect x="5" y="5" width="50" height="50" rx="12" fill="#2563eb" />
+          <rect x="65" y="5" width="50" height="50" rx="12" fill="#38bdf8" />
+          <rect x="5" y="65" width="50" height="50" rx="12" fill="#60a5fa" />
+          <rect x="65" y="65" width="50" height="50" rx="12" fill="#8b5cf6" />
+        </g>
+      </svg>
+    </div>
+    <div class="boot-progress"><span></span></div>
+    <div class="boot-text">AI-Windows Light</div>
+  </div>
+
+  <div id="desktop">
+    <div class="ambient-glow"></div>
+
+    <div class="desktop-icons"></div>
+
+    <div class="start-menu" id="start-menu">
+      <div class="start-header">AI Launchpad</div>
+      <div class="start-grid" id="start-grid"></div>
+      <div class="widget">
+        <h3>AI Pulse</h3>
+        <p>"Focus on clarity. Light OS is optimized for swift creative bursts."</p>
+      </div>
+    </div>
+
+    <div class="taskbar">
+      <div class="start-button" id="start-button">AI</div>
+      <div class="taskbar-search">Type here to ask Light AI...</div>
+      <div class="taskbar-clock" id="taskbar-clock"></div>
+    </div>
+
+    <div class="notification" id="notification">Welcome to AI-Windows Light ✨</div>
+  </div>
+
+  <script>
+    const settings = {
+      bootDuration: 2600,
+      ambientMotion: true,
+      maxZIndex: 50,
+      theme: {
+        accent: '#3b82f6',
+        radius: 18,
+      },
+    };
+
+    const fileSystem = {
+      structure: {
+        Desktop: [
+          { id: 'notes', name: 'AI Notes', type: 'app' },
+          { id: 'gallery', name: 'Dream Gallery', type: 'app' },
+          { id: 'terminal', name: 'Neon Terminal', type: 'app' },
+          { id: 'weather', name: 'Sky Widget', type: 'app' },
+        ],
+        Documents: [
+          { id: 'welcome', name: 'Welcome.txt', type: 'file', content: 'Добро пожаловать в AI-Windows Light! ✨' },
+        ],
+      },
+    };
+
+    const windowManager = {
+      windows: new Map(),
+      zIndexCounter: settings.maxZIndex,
+      workspace: document.getElementById('desktop'),
+
+      createWindow({ id, title, content, width = 360, height = 260, position }) {
+        if (this.windows.has(id)) {
+          const existing = this.windows.get(id);
+          existing.element.classList.remove('hidden');
+          this.focusWindow(id);
+          return existing;
+        }
+
+        const win = document.createElement('div');
+        win.className = 'window';
+        win.dataset.id = id;
+        win.style.width = width + 'px';
+        win.style.minHeight = height + 'px';
+
+        const header = document.createElement('div');
+        header.className = 'window-header';
+        header.innerHTML = `<h2>${title}</h2>`;
+
+        const controls = document.createElement('div');
+        controls.className = 'window-controls';
+        const btnMin = document.createElement('button');
+        btnMin.className = 'btn-min';
+        const btnClose = document.createElement('button');
+        btnClose.className = 'btn-close';
+        controls.append(btnMin, btnClose);
+        header.appendChild(controls);
+
+        const body = document.createElement('div');
+        body.className = 'window-body';
+        body.innerHTML = content;
+
+        win.append(header, body);
+        this.workspace.appendChild(win);
+
+        if (position) {
+          win.style.left = position.x + 'px';
+          win.style.top = position.y + 'px';
+        } else {
+          const rect = this.workspace.getBoundingClientRect();
+          win.style.left = rect.width / 2 - width / 2 + (Math.random() * 80 - 40) + 'px';
+          win.style.top = rect.height / 2 - height / 2 + (Math.random() * 60 - 30) + 'px';
+        }
+
+        const windowObj = { element: win, header, body, id };
+        this.windows.set(id, windowObj);
+        this.enableDrag(windowObj);
+        this.focusWindow(id);
+
+        btnClose.addEventListener('click', () => this.closeWindow(id));
+        btnMin.addEventListener('click', () => this.minimizeWindow(id));
+        win.addEventListener('mousedown', () => this.focusWindow(id));
+
+        return windowObj;
+      },
+
+      enableDrag({ element, header }) {
+        let isDragging = false;
+        let startX = 0;
+        let startY = 0;
+        let offsetX = 0;
+        let offsetY = 0;
+
+        const onPointerMove = (event) => {
+          if (!isDragging) return;
+          offsetX = event.clientX - startX;
+          offsetY = event.clientY - startY;
+        };
+
+        const applyTransform = () => {
+          if (!isDragging) return;
+          element.style.left = `${offsetX}px`;
+          element.style.top = `${offsetY}px`;
+          requestAnimationFrame(applyTransform);
+        };
+
+        header.addEventListener('mousedown', (event) => {
+          isDragging = true;
+          element.style.transition = 'none';
+          const rect = element.getBoundingClientRect();
+          startX = event.clientX - rect.left;
+          startY = event.clientY - rect.top;
+          offsetX = rect.left;
+          offsetY = rect.top;
+          requestAnimationFrame(applyTransform);
+        });
+
+        window.addEventListener('mousemove', onPointerMove);
+        window.addEventListener('mouseup', () => {
+          isDragging = false;
+          element.style.transition = '';
+        });
+      },
+
+      focusWindow(id) {
+        const win = this.windows.get(id);
+        if (!win) return;
+        this.zIndexCounter += 1;
+        win.element.style.zIndex = this.zIndexCounter;
+        this.windows.forEach((w) => w.element.classList.remove('focused'));
+        win.element.classList.add('focused');
+      },
+
+      closeWindow(id) {
+        const win = this.windows.get(id);
+        if (!win) return;
+        win.element.style.opacity = '0';
+        win.element.style.transform = 'scale(0.95) translateY(8px)';
+        setTimeout(() => win.element.remove(), 180);
+        this.windows.delete(id);
+      },
+
+      minimizeWindow(id) {
+        const win = this.windows.get(id);
+        if (!win) return;
+        win.element.classList.toggle('hidden');
+      },
+    };
+
+    const appManager = {
+      apps: {
+        notes: {
+          name: 'AI Notes',
+          render() {
+            return `<div class="notes-body">
+              <textarea spellcheck="false">Минималистичный блокнот.
+Запишите идею, а Light AI подсветит главное.
+
+# Mind Spark
+- Цель: показать лёгкость
+- Время: 2 минуты демо
+- Команда: вы + AI ядро
+</textarea>
+            </div>`;
+          },
+          size: { width: 380, height: 280 },
+        },
+        gallery: {
+          name: 'Dream Gallery',
+          render() {
+            const img = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAJYAAACWCAYAAADLabXuAAAACXBIWXMAAAsTAAALEwEAmpwYAAAETklEQVR4nO2dQXbTQBRF42wEUhBEwSKEQJEBLQJSCBiCPQBoAQpACLQTyF2bM7Mzs7ue1A57d2Znd2tnzvte6Z7r/Xn/OebMptMBgMI4uNFJNMnKfn5+fny1Msg2Fha2sLCw8Pv70YBcYGBAf37939sbW2vv7+/7YkEsy2traWlpWVhY2MjJyezv7u7M0bGxspKSklJSURGxubtrY2Z86cOXny5EkjIyP19fX1t7enc3BwgKzs7OLR48eTZgxY44dO/Z2dnZeXp6MiIiEhISdnR0ICwsbHBxUVFRlZWV9fX1paWmRkZGB+fk5x8TEhBMsbdvCwsKVlZVtbW2JiYlJSUmenp6NjY2srKzT0dHQ0NCQSdOnMhgMBiYmJmJiYpOTk8XFxba2tpKSkp4eHjIy8szMzOLh4dHR0WioqL6+vqoqCh6enpNTQ2cnNzMzMz/f3909PTGxsbo6Gh3NxcKioq8vLyLi4uMjIy5ubmgoKDAMBgYGBgMDQ3F2dlZaWlqSkpIqKioQEBDIy8tr164d5ubnQ0NDy5cvXz9+/Hhv3759enp6m5ubtLS0lJSUtLS0vr6+EwmE/M8/Pz7+/uCGtra2urq7KSgo4ODgaGhrk5ORHjx4tLi7u8ePH5+TkBObk5FRUVUVFRIiIi5ubkPDw+xsbGBgYF5eXnR0dH8/Pz29nYkJ+fn7u7u0tPTaWlpSEgIEwmE//GPtre3wcHB07dv38LCwkJCQldXV3V1dXZ2dmZmZkvLy8iyg9PT2EhISkpKQoKCvLz85OTk7q6OiIiaLVaVldXk5KS2dnZTU1NaWlpFRUVoaGgkEol4e3sxdXV1hYaGhoaGvr4+srKy8vLyBwcHJSUlpaWlGRgYODg4lJSUODg4VlZWIRBImJiYDA4OgkEglZWVhYSEmJubO3PmjPn5+fT0NCgoKDz58/PW1tbU1NT0tLSAqEePXrU1dWZmZk3Nzcf8H2dAV69emX8G+4395PNYJ1gsVi/9UvvYuOmWPYgAAAABJRU5ErkJggg==';
+            return `<div class="gallery">
+              <img src="${img}" alt="AI Landscape" />
+              <img src="${img}" alt="AI Landscape" />
+              <img src="${img}" alt="AI Landscape" />
+              <img src="${img}" alt="AI Landscape" />
+            </div>`;
+          },
+          size: { width: 420, height: 320 },
+        },
+        terminal: {
+          name: 'Neon Terminal',
+          render() {
+            return `<div class="terminal">
+              <div class="terminal-output" data-terminal="output">
+                LightOS v0.1. Generative shell ready.\nType \'help\' to explore.\n
+              </div>
+              <div class="terminal-input">
+                <span>light@ai:</span>
+                <input class="terminal-field" autocomplete="off" />
+              </div>
+            </div>`;
+          },
+          size: { width: 440, height: 320 },
+        },
+        weather: {
+          name: 'Sky Widget',
+          render() {
+            return `<div class="widget">
+              <h3>Skyline</h3>
+              <p>Ясно, +22°C • Ветер 2 м/с • Давление 752 мм</p>
+              <p>AI совет: "Идеально для прогулки и идей"</p>
+            </div>`;
+          },
+          size: { width: 320, height: 220 },
+        },
+      },
+
+      launch(id) {
+        const app = this.apps[id];
+        if (!app) return;
+        const win = windowManager.createWindow({
+          id,
+          title: app.name,
+          content: app.render(),
+          width: app.size.width,
+          height: app.size.height,
+        });
+        if (id === 'terminal') {
+          const container = win.body.querySelector('.terminal');
+          if (container && !container.dataset.ready) {
+            this.initTerminal(container);
+            container.dataset.ready = 'true';
+          }
+          const input = win.body.querySelector('.terminal-field');
+          if (input) input.focus();
+        }
+      },
+
+      initTerminal(container) {
+        const outputEl = container.querySelector('[data-terminal="output"]');
+        const input = container.querySelector('.terminal-field');
+        if (!input || !outputEl) return;
+        const history = [];
+        let index = 0;
+
+        const appendLine = (text) => {
+          outputEl.textContent += text + '\n';
+          outputEl.scrollTop = outputEl.scrollHeight;
+        };
+
+        input.focus();
+
+        input.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter') {
+            const command = input.value.trim();
+            input.value = '';
+            history.push(command);
+            index = history.length;
+            appendLine('> ' + command);
+            handleCommand(command);
+          }
+          if (event.key === 'ArrowUp') {
+            index = Math.max(0, index - 1);
+            input.value = history[index] || '';
+            event.preventDefault();
+          }
+          if (event.key === 'ArrowDown') {
+            index = Math.min(history.length, index + 1);
+            input.value = history[index] || '';
+            event.preventDefault();
+          }
+        });
+
+        const handleCommand = (cmd) => {
+          if (!cmd) return;
+          const commands = {
+            help: 'Команды: help, idea, system, clear.',
+            idea: 'AI-Light: визуал — стеклянный, контрастный. Голос: мягкий дневной.',
+            system: 'LightOS build 0.1. Memory footprint: 42MB. GPU glow active.',
+            clear: () => { outputEl.textContent = ''; },
+          };
+
+          const action = commands[cmd];
+          if (typeof action === 'function') {
+            action();
+            return;
+          }
+          if (action) {
+            appendLine(action);
+          } else {
+            appendLine('Unknown command. try help.');
+          }
+        };
+      },
+    };
+
+    const desktop = {
+      bootScreen: document.getElementById('boot-screen'),
+      progressBar: document.querySelector('.boot-progress span'),
+      desktopEl: document.getElementById('desktop'),
+      iconsEl: document.querySelector('.desktop-icons'),
+      ambientEl: document.querySelector('.ambient-glow'),
+      startButton: document.getElementById('start-button'),
+      startMenu: document.getElementById('start-menu'),
+      startGrid: document.getElementById('start-grid'),
+      clockEl: document.getElementById('taskbar-clock'),
+      notification: document.getElementById('notification'),
+      bootStart: null,
+
+      init() {
+        this.renderIcons();
+        this.renderStartMenu();
+        this.bindEvents();
+        this.animateAmbient();
+        this.updateClock();
+        this.showNotification();
+      },
+
+      renderIcons() {
+        fileSystem.structure.Desktop.forEach((file) => {
+          if (file.type !== 'app') return;
+          const icon = document.createElement('div');
+          icon.className = 'desktop-icon';
+          icon.dataset.app = file.id;
+          icon.innerHTML = `${this.iconSvg(file.id)}<span>${file.name}</span>`;
+          icon.addEventListener('dblclick', () => appManager.launch(file.id));
+          this.iconsEl.appendChild(icon);
+        });
+      },
+
+      iconSvg(id) {
+        const icons = {
+          notes: `<svg viewBox="0 0 24 24"><path d="M6 3h9l5 5v13a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4c0-.55.45-1 1-1zm8 0v5h5" opacity=".6"/><path d="M9 12h6v1.5H9V12zm0 3h6v1.5H9V15z"/></svg>`,
+          gallery: `<svg viewBox="0 0 24 24"><path d="M5 4h14a1 1 0 0 1 1 1v14l-3.5-3.5-2.5 2.5-4-4-5 5V5a1 1 0 0 1 1-1z" opacity=".6"/><circle cx="9" cy="9" r="2" /></svg>`,
+          terminal: `<svg viewBox="0 0 24 24"><path d="M3 5h18v14H3V5zm4 3 4 4-4 4" opacity=".6"/><path d="M13 15h4v1.5h-4z"/></svg>`,
+          weather: `<svg viewBox="0 0 24 24"><path d="M6 15a4 4 0 0 1 0-8 5 5 0 0 1 10 0 4 4 0 0 1 1 7.874V15H6z" opacity=".6"/><path d="M8 17h10a2 2 0 0 1 0 4H8a2 2 0 1 1 0-4z"/></svg>`,
+        };
+        return icons[id] || icons.notes;
+      },
+
+      renderStartMenu() {
+        Object.keys(appManager.apps).forEach((id) => {
+          const app = appManager.apps[id];
+          const item = document.createElement('div');
+          item.className = 'start-app';
+          item.innerHTML = `${this.iconSvg(id)}<span>${app.name}</span>`;
+          item.addEventListener('click', () => {
+            appManager.launch(id);
+            this.toggleStart(false);
+          });
+          this.startGrid.appendChild(item);
+        });
+      },
+
+      bindEvents() {
+        this.startButton.addEventListener('click', () => this.toggleStart());
+        window.addEventListener('click', (event) => {
+          if (!this.startMenu.contains(event.target) && event.target !== this.startButton) {
+            this.toggleStart(false);
+          }
+        });
+      },
+
+      toggleStart(forceState) {
+        const state = typeof forceState === 'boolean' ? forceState : !this.startMenu.classList.contains('active');
+        this.startMenu.classList.toggle('active', state);
+      },
+
+      animateAmbient() {
+        if (!settings.ambientMotion) return;
+        let t = 0;
+        const loop = () => {
+          t += 0.003;
+          const x = Math.sin(t) * 12;
+          const y = Math.cos(t * 0.8) * 16;
+          this.ambientEl.style.transform = `translate(${x}px, ${y}px)`;
+          requestAnimationFrame(loop);
+        };
+        requestAnimationFrame(loop);
+      },
+
+      updateClock() {
+        const now = new Date();
+        const time = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+        const date = now.toLocaleDateString('ru-RU', { day: '2-digit', month: 'short' }).replace('.', '');
+        this.clockEl.textContent = `${time}  |  ${date}`;
+        setTimeout(() => this.updateClock(), 30_000);
+      },
+
+      showNotification() {
+        setTimeout(() => this.notification.classList.add('visible'), 1200);
+        setTimeout(() => this.notification.classList.remove('visible'), 4800);
+      },
+    };
+
+    const boot = {
+      start() {
+        desktop.bootStart = performance.now();
+        this.animateProgress();
+        setTimeout(() => this.finish(), settings.bootDuration);
+      },
+
+      animateProgress() {
+        const duration = settings.bootDuration - 400;
+        const start = performance.now();
+        const animate = (timestamp) => {
+          const progress = Math.min((timestamp - start) / duration, 1);
+          desktop.progressBar.style.width = progress * 100 + '%';
+          if (progress < 1) requestAnimationFrame(animate);
+        };
+        requestAnimationFrame(animate);
+      },
+
+      finish() {
+        desktop.bootScreen.style.transition = 'opacity 0.6s ease';
+        desktop.bootScreen.style.opacity = '0';
+        setTimeout(() => {
+          desktop.bootScreen.style.display = 'none';
+          desktop.desktopEl.style.display = 'block';
+          requestAnimationFrame(() => desktop.init());
+        }, 600);
+      },
+    };
+
+    boot.start();
+  </script>
+</body>
+</html>
